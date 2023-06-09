@@ -1,0 +1,47 @@
+# This ninja build file builds the jeKerenl
+
+# It assumes all of the xeus tools have been installed in /user/local
+
+cFlags = -Wall
+includeFlags = 
+linkFlags = -lcrypto -lsodium -luuid -lpthread
+
+rule cc
+  command = g++ $cFlags $includeFlags -c $in -o $out
+
+rule link
+  command = g++ -o $out $in $linkFlags
+
+rule copy
+  command = cp $in $out
+
+rule mkdir
+  command = mkdir -p $out
+
+build jeClass.o : cc jeClass.cpp | jeClass.hpp 
+
+build jeMain.o : cc jeMain.cpp | jeClass.hpp 
+
+build jsonEchoKernel : link jeMain.o jeClass.o $
+  /usr/local/lib/libxeus-zmq.a $
+  /usr/local/lib/libxeus.a $
+  /usr/local/lib/libzmq.a
+
+# we need to place the kernelspec file into one of:
+#  - /home/joylol/.local/share/jupyter
+#  - /usr/local/share/jupyter
+#  - /usr/share/jupyter
+#
+# in the subdirectory: kernels/<<kernelName>>
+#
+# see: https://jupyter-client.readthedocs.io/en/latest/kernels.html#kernels
+#      https://jupyter-client.readthedocs.io/en/latest/kernels.html#kernelspecs
+
+build /usr/local/bin/jsonEchoKernel : copy jsonEchoKernel
+
+build /usr/local/share/jupyter/kernels/json-echo : $
+  mkdir
+
+build /usr/local/share/jupyter/kernels/json-echo/kernel.json : $
+  copy kernel.json  | $
+  /usr/local/share/jupyter/kernels/json-echo
